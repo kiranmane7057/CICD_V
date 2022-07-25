@@ -1,0 +1,74 @@
+pipeline{
+	agent {
+		label "built-in"
+			}
+	stages{
+
+		stage ('Make-Folders') {
+			agent {node 'name'}
+			steps {
+			    dir ("/"){
+				sh "rm -rf scripts docker project"
+				sh "mkdir scripts docker project"
+                    }
+                }		
+			}
+
+		stage ('Kill-Containers') {
+			agent {node 'name'}
+			steps {
+			    dir ("/scripts"){
+				sh "rm -rf *"
+				git 'https://github.com/satish7498/Kill-Docker-Container.git'
+				sh "chmod 744 kk.sh"
+				sh "./kk.sh"
+                    }
+                }		
+			}
+		
+		stage ('Get-Repo') {
+			agent {node 'name'}
+			steps {
+			    dir ("/project"){
+				sh "rm -rf *"
+				sh "git clone 'https://github.com/satish7498/java-spring-boot-maven.git'"
+                    }
+                }		
+			}
+		stage ('Build-Code'){
+		    agent {node 'name'}
+			steps{
+		    dir ("/project/java-spring-boot-maven/"){
+				sh "mvn clean install"
+				}
+			}		
+		}
+		
+		stage ('Get-Dockerfile'){
+		    agent {node 'name'}
+			steps{
+		    dir ("/docker"){
+				sh "rm -rf *"
+				git 'https://github.com/satish7498/Docker-file-Project.git'
+				sh "cp /project/java-spring-boot-maven/target/hello-world-spring-boot-pom-0.0.1-SNAPSHOT.jar /docker"
+				}
+			}		
+		}
+
+		stage ('Run-ansible-Playbook'){
+		    agent {node 'built-in'}
+			steps{
+		    dir ("/home/name"){
+		        sh "rm -rf file.yaml"
+				git 'https://github.com/satish7498/ansible-playbook-working.git'
+				sh "chown satish:satish file.yaml"
+				sh "sudo -u satish ansible-playbook file.yaml"
+	
+				}
+			}		
+		}
+
+		    
+		
+	}
+}
